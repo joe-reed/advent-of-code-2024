@@ -17,7 +17,7 @@ func puzzle2(input string) (result int) {
 
 func solvePuzzleForRules(input string, rules []Rule) (result int) {
 	for _, equation := range parseEquations(input) {
-		if isSolvable(equation, rules) {
+		if equation.isSolvable(rules) {
 			result += equation.result
 		}
 	}
@@ -29,7 +29,7 @@ type Equation struct {
 	operands []int
 }
 
-func isSolvable(e Equation, rules []Rule) bool {
+func (e Equation) isSolvable(rules []Rule) bool {
 	i := len(e.operands) - 1
 	operand := e.operands[i]
 
@@ -38,7 +38,7 @@ func isSolvable(e Equation, rules []Rule) bool {
 	}
 
 	for _, rule := range rules {
-		if rule.test(e.result, operand) && isSolvable(Equation{rule.getNewResult(e.result, operand), e.operands[:i]}, rules) {
+		if rule.test(e.result, operand) && (Equation{rule.getNewResult(e.result, operand), e.operands[:i]}).isSolvable(rules) {
 			return true
 		}
 	}
@@ -68,7 +68,7 @@ var concatenationRule = Rule{
 	},
 	func(result, operand int) int {
 		newResult, _ := strings.CutSuffix(strconv.Itoa(result), strconv.Itoa(operand))
-		
+
 		return ToInt(newResult)
 	},
 }
