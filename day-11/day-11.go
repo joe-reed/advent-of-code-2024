@@ -1,7 +1,8 @@
 package main
 
 import (
-	"slices"
+	"github.com/samber/lo"
+	"maps"
 	"strconv"
 	"strings"
 	"utils"
@@ -11,54 +12,62 @@ func puzzle1(input string) (result int) {
 	return solve(input, 25)
 }
 
-//func puzzle2(input string) (result int) {
-//	return solve(input, 75)
-//}
+func puzzle2(input string) (result int) {
+	return solve(input, 75)
+}
 
 func solve(input string, blinkNumber int) (result int) {
-	stones := parseStones(input)
+	counts := parseCounts(input)
 
 	for range blinkNumber {
-		stones = stones.blink()
-	}
+		newCounts := make(map[Stone]int)
 
-	return len(stones)
-}
-
-type Stones []int
-
-func (stones Stones) blink() Stones {
-	newStones := make(Stones, len(stones))
-
-	j := 0
-	for i := 0; i < len(stones); i++ {
-		if stones[i] == 0 {
-			newStones[j] = 1
-
-			j++
-			continue
+		for stone := range counts {
+			for _, s := range stone.blink() {
+				newCounts[s] += counts[stone]
+			}
 		}
 
-		stoneString := strconv.Itoa(stones[i])
-		if len(stoneString)%2 == 0 {
-			halfway := len(stoneString) / 2
-
-			newStones[j] = utils.ToInt(stoneString[:halfway])
-			newStones = slices.Insert(newStones, j+1, utils.ToInt(stoneString[halfway:]))
-
-			j += 2
-
-			continue
-		}
-
-		newStones[j] = stones[i] * 2024
-		j++
-		continue
+		counts = newCounts
 	}
 
-	return newStones
+	for count := range maps.Values(counts) {
+		result += count
+	}
+
+	return
 }
 
-func parseStones(input string) (stones Stones) {
-	return utils.MapToInts(strings.Split(input, " "))
+type Stone int
+
+func (stone Stone) blink() []Stone {
+	if stone == 0 {
+		return []Stone{1}
+	}
+
+	stoneString := strconv.Itoa(int(stone))
+
+	if len(stoneString)%2 == 0 {
+		halfway := len(stoneString) / 2
+
+		return []Stone{
+			Stone(utils.ToInt(stoneString[:halfway])),
+			Stone(utils.ToInt(stoneString[halfway:])),
+		}
+	}
+
+	return []Stone{stone * 2024}
+}
+
+func parseCounts(input string) (counts map[Stone]int) {
+	stones := lo.Map(strings.Split(input, " "), func(s string, _ int) Stone {
+		return Stone(utils.ToInt(s))
+	})
+
+	counts = make(map[Stone]int)
+	for _, stone := range stones {
+		counts[stone] = 1
+	}
+
+	return
 }
